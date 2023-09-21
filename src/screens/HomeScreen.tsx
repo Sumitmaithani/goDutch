@@ -1,12 +1,11 @@
-import * as React from "react";
-import { Text, View } from "react-native";
+import * as React from 'react';
+import {Text, View} from 'react-native';
 
 function HomeScreen(): JSX.Element {
-
   return (
-     <View>
-        <Text>Home</Text>
-     </View>
+    <View>
+      <Text>Home</Text>
+    </View>
   );
 }
 

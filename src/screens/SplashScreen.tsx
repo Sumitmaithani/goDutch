@@ -10,7 +10,7 @@ function SplashScreen({setIsLoading}: SplashProps): JSX.Element {
   return (
     <View style={{flex: 1, alignItems: 'center', margin: 0}}>
       <LottieView
-        source={require('../assets/splash/splash.json')}
+        source={require('../../assets/splash/splash.json')}
         autoPlay
         loop={false}
         resizeMode="cover"
