@@ -87,7 +87,7 @@ const CustomButton = ({flatListRef, flatListIndex, dataLength, x}: Props) => {
         if (flatListIndex.value < dataLength - 1) {
           flatListRef.current?.scrollToIndex({index: flatListIndex.value + 1});
         } else {
-          navigation.navigate('Home');
+          navigation.navigate('Register');
         }
       }}>
       <Animated.View
