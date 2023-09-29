@@ -1,13 +1,24 @@
-import {SafeAreaView, Text, TouchableOpacity, View} from 'react-native';
+import {
+  Dimensions,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import React from 'react';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useNavigation} from '@react-navigation/native';
+import {useMutation} from '@apollo/client';
+import Icon from 'react-native-vector-icons/Entypo';
+
+//files
+
 import Spacing from '../components/constants/Spacing';
 import FontSize from '../components/constants/FontSize';
 import Colors from '../components/constants/Colors';
 import Font from '../components/constants/Font';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import AppTextInput from '../components/Auth/AppTextInput';
-import {useNavigation} from '@react-navigation/native';
-import {useMutation} from '@apollo/client';
 import {REGISTER_USER} from '../../GraphQL/Mutations/mutations';
 
 function RegisterScreen(): JSX.Element {
@@ -20,6 +31,19 @@ function RegisterScreen(): JSX.Element {
   });
 
   const [register] = useMutation(REGISTER_USER);
+
+  // State variable to track password visibility
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+
+  // Function to toggle the password visibility state
+  const toggleShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmShowPassword = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
 
   const registerUser = async (e: any) => {
     e.preventDefault();
@@ -90,28 +114,53 @@ function RegisterScreen(): JSX.Element {
           }}>
           <AppTextInput
             placeholder="Username"
+            autoCapitalize="none"
+            autoCorrect={false}
             value={userInfo.username}
             onChangeText={(e): void => setUserInfo({...userInfo, username: e})}
           />
           <AppTextInput
             placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
             value={userInfo.email}
             onChangeText={(e): void => setUserInfo({...userInfo, email: e})}
           />
-          <AppTextInput
-            placeholder="Password"
-            secureTextEntry={true}
-            value={userInfo.conformpassword}
-            onChangeText={(e): void =>
-              setUserInfo({...userInfo, conformpassword: e})
-            }
-          />
-          <AppTextInput
-            placeholder="Confirm Password"
-            secureTextEntry={true}
-            value={userInfo.password}
-            onChangeText={(e): void => setUserInfo({...userInfo, password: e})}
-          />
+          <View>
+            <AppTextInput
+              placeholder="Password"
+              secureTextEntry={!showPassword}
+              value={userInfo.password}
+              onChangeText={(e): void =>
+                setUserInfo({...userInfo, password: e})
+              }
+            />
+            <Icon
+              name={showPassword ? 'eye-with-line' : 'eye'}
+              size={24}
+              color="#aaa"
+              style={styles.icon}
+              onPress={toggleShowPassword}
+            />
+          </View>
+          <View>
+            <AppTextInput
+              placeholder="Confirm Password"
+              secureTextEntry={!showConfirmPassword}
+              value={userInfo.conformpassword}
+              onChangeText={(e): void =>
+                setUserInfo({...userInfo, conformpassword: e})
+              }
+            />
+            <Icon
+              name={showConfirmPassword ? 'eye-with-line' : 'eye'}
+              size={24}
+              color="#aaa"
+              style={styles.icon}
+              onPress={toggleConfirmShowPassword}
+            />
+          </View>
         </View>
 
         <TouchableOpacity
@@ -222,3 +271,12 @@ function RegisterScreen(): JSX.Element {
 }
 
 export default RegisterScreen;
+
+const styles = StyleSheet.create({
+  icon: {
+    position: 'absolute',
+    right: 0,
+    top: 30,
+    left: Dimensions.get('window').width - 80,
+  },
+});

@@ -1,4 +1,5 @@
 import {
+  Dimensions,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -9,6 +10,7 @@ import React from 'react';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useNavigation} from '@react-navigation/native';
 import {useMutation} from '@apollo/client';
+import Icon from 'react-native-vector-icons/Entypo';
 
 // files
 import Spacing from '../components/constants/Spacing';
@@ -85,8 +87,8 @@ function LoginScreen(): JSX.Element {
           </Text>
           <Text
             style={{
-              fontFamily: Font['poppins-semiBold'],
-              fontSize: FontSize.large,
+              fontFamily: Font['poppins-regular'],
+              fontSize: FontSize.small,
               maxWidth: '60%',
               textAlign: 'center',
             }}>
@@ -99,6 +101,9 @@ function LoginScreen(): JSX.Element {
           }}>
           <AppTextInput
             placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
             value={userInfo.email}
             onChangeText={(e): void => setUserInfo({...userInfo, email: e})}
           />
@@ -111,13 +116,13 @@ function LoginScreen(): JSX.Element {
                 setUserInfo({...userInfo, password: e})
               }
             />
-            {/* <MaterialCommunityIcons
-              name={showPassword ? 'eye-off' : 'eye'}
+            <Icon
+              name={showPassword ? 'eye-with-line' : 'eye'}
               size={24}
               color="#aaa"
               style={styles.icon}
               onPress={toggleShowPassword}
-            /> */}
+            />
           </View>
         </View>
 
@@ -243,32 +248,10 @@ function LoginScreen(): JSX.Element {
 export default LoginScreen;
 
 const styles = StyleSheet.create({
-  mainContainer: {
-    marginTop: 70,
-    margin: 40,
-  },
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f3f3f3',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-  },
-  input: {
-    flex: 1,
-    color: '#333',
-    paddingVertical: 10,
-    paddingRight: 10,
-    fontSize: 16,
-  },
   icon: {
-    marginLeft: 10,
-  },
-  heading: {
-    alignItems: 'center',
-    fontSize: 20,
-    color: 'green',
-    marginBottom: 20,
+    position: 'absolute',
+    right: 0,
+    top: 30,
+    left: Dimensions.get('window').width - 80,
   },
 });

@@ -20,6 +20,8 @@ const AppTextInput: React.FC<TextInputProps> = ({...otherProps}) => {
           backgroundColor: Colors.lightPrimary,
           borderRadius: Spacing,
           marginVertical: Spacing,
+          borderWidth: 3,
+          borderColor: Colors.gray,
         },
         focused && {
           borderWidth: 3,
