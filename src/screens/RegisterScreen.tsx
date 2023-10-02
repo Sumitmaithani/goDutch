@@ -1,5 +1,7 @@
 import {
   Dimensions,
+  Image,
+  Keyboard,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -9,8 +11,8 @@ import {
 import React from 'react';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useNavigation} from '@react-navigation/native';
-import {useMutation} from '@apollo/client';
 import Icon from 'react-native-vector-icons/Entypo';
+import axios from 'axios';
 
 //files
 
@@ -19,7 +21,6 @@ import FontSize from '../components/constants/FontSize';
 import Colors from '../components/constants/Colors';
 import Font from '../components/constants/Font';
 import AppTextInput from '../components/Auth/AppTextInput';
-import {REGISTER_USER} from '../../GraphQL/Mutations/mutations';
 
 function RegisterScreen(): JSX.Element {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -27,10 +28,8 @@ function RegisterScreen(): JSX.Element {
     email: '',
     password: '',
     username: '',
-    conformpassword: '',
+    confirmpassword: '',
   });
-
-  const [register] = useMutation(REGISTER_USER);
 
   // State variable to track password visibility
   const [showPassword, setShowPassword] = React.useState(false);
@@ -45,38 +44,85 @@ function RegisterScreen(): JSX.Element {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
-  const registerUser = async (e: any) => {
-    e.preventDefault();
+  const [errors, setErrors] = React.useState({
+    username: null,
+    email: null,
+    password: null,
+    confirmpassword: null,
+  });
+
+  const validate = async () => {
+    Keyboard.dismiss();
+
+    let isValid = true;
+
+    // Validate username
+    if (!userInfo.username) {
+      handleError('Please input a username', 'username');
+      isValid = false;
+    }
+
+    // Validate email
+    if (!userInfo.email) {
+      handleError('Please input an email address', 'email');
+      isValid = false;
+    } else {
+      // we can use a regular expression to check for a valid email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(userInfo.email)) {
+        handleError('Please enter a valid email address', 'email');
+        isValid = false;
+      }
+    }
+
+    // Validate password
+    if (!userInfo.password) {
+      handleError('Please input a password', 'password');
+      isValid = false;
+    } else if (userInfo.password.length < 6) {
+      handleError('Password must be at least 6 characters long', 'password');
+      isValid = false;
+    }
+
+    // Validate confirm password
+    if (!userInfo.confirmpassword) {
+      handleError('Please confirm your password', 'confirmpassword');
+      isValid = false;
+    } else if (userInfo.password !== userInfo.confirmpassword) {
+      handleError('Passwords do not match', 'confirmpassword');
+      isValid = false;
+    }
+
+    if (isValid) {
+      registerUser();
+    }
+  };
+
+  const handleError = (error: any, input: any) => {
+    setErrors(prevState => ({...prevState, [input]: error}));
+  };
+
+  const registerUser = async () => {
     const {username, email, password} = userInfo;
 
-    try {
-      const registerUserData = await register({
-        variables: {
-          registerInput: {
-            username: username,
-            email: email,
-            password: password,
-          },
-        },
-      });
+    const url = `http://localhost:3001/register`;
 
-      if (registerUserData.data && registerUserData.data.registerUser) {
-        console.log(
-          'Successfully Registered. Please wait until you will be approved.',
-        );
-
+    axios
+      .post(url, {username, email, password})
+      .then(response => {
+        console.log(response);
         setUserInfo({
           username: '',
           email: '',
           password: '',
-          conformpassword: '',
+          confirmpassword: '',
         });
-      } else {
-        console.log('Registration failed or user already exists.');
-      }
-    } catch (error: any) {
-      console.log('Error while registering:', error);
-    }
+        navigation.navigate('Home');
+      })
+      .catch(error => {
+        console.log(error);
+        handleError('This email is already present', 'email');
+      });
   };
 
   return (
@@ -105,7 +151,7 @@ function RegisterScreen(): JSX.Element {
               maxWidth: '80%',
               textAlign: 'center',
             }}>
-            Create an account so you can explore all the existing jobs
+            Create an account so you can explore all the world
           </Text>
         </View>
         <View
@@ -117,6 +163,8 @@ function RegisterScreen(): JSX.Element {
             autoCapitalize="none"
             autoCorrect={false}
             value={userInfo.username}
+            error={errors.username}
+            onFocus={() => handleError(null, 'username')}
             onChangeText={(e): void => setUserInfo({...userInfo, username: e})}
           />
           <AppTextInput
@@ -125,6 +173,8 @@ function RegisterScreen(): JSX.Element {
             autoCapitalize="none"
             autoCorrect={false}
             value={userInfo.email}
+            error={errors.email}
+            onFocus={() => handleError(null, 'email')}
             onChangeText={(e): void => setUserInfo({...userInfo, email: e})}
           />
           <View>
@@ -132,6 +182,8 @@ function RegisterScreen(): JSX.Element {
               placeholder="Password"
               secureTextEntry={!showPassword}
               value={userInfo.password}
+              error={errors.password}
+              onFocus={() => handleError(null, 'password')}
               onChangeText={(e): void =>
                 setUserInfo({...userInfo, password: e})
               }
@@ -148,9 +200,11 @@ function RegisterScreen(): JSX.Element {
             <AppTextInput
               placeholder="Confirm Password"
               secureTextEntry={!showConfirmPassword}
-              value={userInfo.conformpassword}
+              value={userInfo.confirmpassword}
+              error={errors.confirmpassword}
+              onFocus={() => handleError(null, 'confirmpassword')}
               onChangeText={(e): void =>
-                setUserInfo({...userInfo, conformpassword: e})
+                setUserInfo({...userInfo, confirmpassword: e})
               }
             />
             <Icon
@@ -164,11 +218,11 @@ function RegisterScreen(): JSX.Element {
         </View>
 
         <TouchableOpacity
-          onPress={registerUser}
+          onPress={validate}
           style={{
             padding: Spacing * 2,
             backgroundColor: Colors.primary,
-            marginVertical: Spacing * 3,
+            marginBottom: Spacing * 2,
             borderRadius: Spacing,
             shadowColor: Colors.primary,
             shadowOffset: {
@@ -196,7 +250,7 @@ function RegisterScreen(): JSX.Element {
           <Text
             style={{
               fontFamily: Font['poppins-semiBold'],
-              color: Colors.text,
+              color: Colors.primary,
               textAlign: 'center',
               fontSize: FontSize.small,
             }}>
@@ -211,7 +265,7 @@ function RegisterScreen(): JSX.Element {
           <Text
             style={{
               fontFamily: Font['poppins-semiBold'],
-              color: Colors.primary,
+              color: Colors.text,
               textAlign: 'center',
               fontSize: FontSize.small,
             }}>
@@ -227,41 +281,28 @@ function RegisterScreen(): JSX.Element {
             <TouchableOpacity
               style={{
                 padding: Spacing,
-                backgroundColor: Colors.gray,
                 borderRadius: Spacing / 2,
                 marginHorizontal: Spacing,
               }}>
-              {/* <Ionicons
-                name="logo-google"
-                color={Colors.text}
-                size={Spacing * 2}
-              /> */}
+              <Image
+                source={require('../../assets/Auth/google.png')}
+                width={24}
+                height={24}
+                style={{width: 24, height: 24}}
+              />
             </TouchableOpacity>
             <TouchableOpacity
               style={{
                 padding: Spacing,
-                backgroundColor: Colors.gray,
                 borderRadius: Spacing / 2,
                 marginHorizontal: Spacing,
               }}>
-              {/* <Ionicons
-                name="logo-apple"
-                color={Colors.text}
-                size={Spacing * 2}
-              /> */}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                padding: Spacing,
-                backgroundColor: Colors.gray,
-                borderRadius: Spacing / 2,
-                marginHorizontal: Spacing,
-              }}>
-              {/* <Ionicons
-                name="logo-facebook"
-                color={Colors.text}
-                size={Spacing * 2}
-              /> */}
+              <Image
+                source={require('../../assets/Auth/facebook.png')}
+                width={24}
+                height={24}
+                style={{width: 24, height: 24}}
+              />
             </TouchableOpacity>
           </View>
         </View>

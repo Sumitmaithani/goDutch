@@ -1,5 +1,7 @@
 import {
   Dimensions,
+  Image,
+  Keyboard,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -9,8 +11,8 @@ import {
 import React from 'react';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useNavigation} from '@react-navigation/native';
-import {useMutation} from '@apollo/client';
 import Icon from 'react-native-vector-icons/Entypo';
+import axios from 'axios';
 
 // files
 import Spacing from '../components/constants/Spacing';
@@ -18,7 +20,6 @@ import FontSize from '../components/constants/FontSize';
 import Colors from '../components/constants/Colors';
 import Font from '../components/constants/Font';
 import AppTextInput from '../components/Auth/AppTextInput';
-import {LOGIN_USER} from '../../GraphQL/Mutations/mutations';
 
 function LoginScreen(): JSX.Element {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -26,6 +27,31 @@ function LoginScreen(): JSX.Element {
     email: '',
     password: '',
   });
+
+  const [errors, setErrors] = React.useState({
+    email: null,
+    password: null,
+  });
+
+  const validate = async () => {
+    Keyboard.dismiss();
+    let isValid = true;
+    if (!userInfo.email) {
+      handleError('Please input email', 'email');
+      isValid = false;
+    }
+    if (!userInfo.password) {
+      handleError('Please input password', 'password');
+      isValid = false;
+    }
+    if (isValid) {
+      loginUser();
+    }
+  };
+
+  const handleError = (error: any, input: any) => {
+    setErrors(prevState => ({...prevState, [input]: error}));
+  };
 
   // State variable to track password visibility
   const [showPassword, setShowPassword] = React.useState(false);
@@ -35,35 +61,27 @@ function LoginScreen(): JSX.Element {
     setShowPassword(!showPassword);
   };
 
-  const [login] = useMutation(LOGIN_USER);
-
-  const loginUser = async (e: any) => {
-    e.preventDefault();
+  const loginUser = async () => {
     const {email, password} = userInfo;
+    const url = `http://localhost:3001/login`;
 
-    try {
-      const loginUserData = await login({
-        variables: {
-          loginInput: {
-            email: email,
-            password: password,
-          },
-        },
-      });
-
-      if (loginUserData.data && loginUserData.data.loginUser) {
-        console.log('Successfully Loged In.');
-
+    axios
+      .post(url, {email, password})
+      .then(response => {
+        console.log(response);
         setUserInfo({
           email: '',
           password: '',
         });
-      } else {
-        console.log('Incorrect Email or Password.');
-      }
-    } catch (error: any) {
-      console.log('Error while Login:', error);
-    }
+        handleError(null, 'email');
+        handleError(null, 'password');
+        navigation.navigate('Home');
+      })
+      .catch(error => {
+        console.log(error);
+        handleError(' ', 'email');
+        handleError('Incorrect email or password', 'password');
+      });
   };
 
   return (
@@ -105,6 +123,8 @@ function LoginScreen(): JSX.Element {
             autoCapitalize="none"
             autoCorrect={false}
             value={userInfo.email}
+            error={errors.email}
+            onFocus={() => handleError(null, 'email')}
             onChangeText={(e): void => setUserInfo({...userInfo, email: e})}
           />
           <View>
@@ -112,6 +132,8 @@ function LoginScreen(): JSX.Element {
               placeholder="Password"
               secureTextEntry={!showPassword}
               value={userInfo.password}
+              error={errors.password}
+              onFocus={() => handleError(null, 'password')}
               onChangeText={(e): void =>
                 setUserInfo({...userInfo, password: e})
               }
@@ -139,7 +161,7 @@ function LoginScreen(): JSX.Element {
         </View>
 
         <TouchableOpacity
-          onPress={loginUser}
+          onPress={validate}
           style={{
             padding: Spacing * 2,
             backgroundColor: Colors.primary,
@@ -171,7 +193,7 @@ function LoginScreen(): JSX.Element {
           <Text
             style={{
               fontFamily: Font['poppins-semiBold'],
-              color: Colors.text,
+              color: Colors.primary,
               textAlign: 'center',
               fontSize: FontSize.small,
             }}>
@@ -186,7 +208,7 @@ function LoginScreen(): JSX.Element {
           <Text
             style={{
               fontFamily: Font['poppins-semiBold'],
-              color: Colors.primary,
+              color: Colors.text,
               textAlign: 'center',
               fontSize: FontSize.small,
             }}>
@@ -202,41 +224,28 @@ function LoginScreen(): JSX.Element {
             <TouchableOpacity
               style={{
                 padding: Spacing,
-                backgroundColor: Colors.gray,
                 borderRadius: Spacing / 2,
                 marginHorizontal: Spacing,
               }}>
-              {/* <Ionicons
-                name="logo-google"
-                color={Colors.text}
-                size={Spacing * 2}
-              /> */}
+              <Image
+                source={require('../../assets/Auth/google.png')}
+                width={24}
+                height={24}
+                style={{width: 24, height: 24}}
+              />
             </TouchableOpacity>
             <TouchableOpacity
               style={{
                 padding: Spacing,
-                backgroundColor: Colors.gray,
                 borderRadius: Spacing / 2,
                 marginHorizontal: Spacing,
               }}>
-              {/* <Ionicons
-                name="logo-apple"
-                color={Colors.text}
-                size={Spacing * 2}
-              /> */}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{
-                padding: Spacing,
-                backgroundColor: Colors.gray,
-                borderRadius: Spacing / 2,
-                marginHorizontal: Spacing,
-              }}>
-              {/* <Ionicons
-                name="logo-facebook"
-                color={Colors.text}
-                size={Spacing * 2}
-              /> */}
+              <Image
+                source={require('../../assets/Auth/facebook.png')}
+                width={24}
+                height={24}
+                style={{width: 24, height: 24}}
+              />
             </TouchableOpacity>
           </View>
         </View>
