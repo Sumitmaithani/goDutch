@@ -17,6 +17,7 @@ import {
   GoogleSignin,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
+import {AccessToken, LoginManager, Profile} from 'react-native-fbsdk-next';
 
 // files
 import Spacing from '../components/constants/Spacing';
@@ -300,6 +301,59 @@ function LoginScreen(): JSX.Element {
               />
             </TouchableOpacity>
             <TouchableOpacity
+              onPress={() => {
+                LoginManager.logInWithPermissions([
+                  'public_profile',
+                  'email',
+                ]).then(
+                  function (result) {
+                    if (result.isCancelled) {
+                      console.log('Login Cancelled ' + JSON.stringify(result));
+                    } else {
+                      console.log(
+                        'Login success with  permisssions: ' +
+                          JSON.stringify(result),
+                      );
+                      console.log('Login Success ' + JSON.stringify(result));
+                      Profile.getCurrentProfile().then(function (
+                        currentProfile,
+                      ) {
+                        if (currentProfile) {
+                          console.log(currentProfile);
+                          console.log(
+                            'The current logged user is: ' +
+                              currentProfile.name +
+                              '. His profile id is: ' +
+                              currentProfile.userID,
+                          );
+
+                          axios
+                            .post(url, {
+                              email: currentProfile.email,
+                              password: currentProfile.userID,
+                            })
+                            .then(response => {
+                              console.log(response);
+                              setApiError('');
+                              navigation.navigate('Home');
+                            })
+                            .catch(error => {
+                              console.log(error);
+                              setApiError('This email is already present');
+                            });
+                        }
+                      });
+
+                      AccessToken.getCurrentAccessToken().then(data => {
+                        console.log(data);
+                      });
+                    }
+                  },
+                  function (error) {
+                    console.log('Login failed with error: ' + error);
+                  },
+                );
+              }}
               style={{
                 padding: Spacing,
                 borderRadius: Spacing / 2,
