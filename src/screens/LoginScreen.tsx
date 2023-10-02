@@ -13,6 +13,10 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Entypo';
 import axios from 'axios';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 
 // files
 import Spacing from '../components/constants/Spacing';
@@ -21,8 +25,11 @@ import Colors from '../components/constants/Colors';
 import Font from '../components/constants/Font';
 import AppTextInput from '../components/Auth/AppTextInput';
 
+const url = `http://localhost:3001/login`;
+
 function LoginScreen(): JSX.Element {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const [apiError, setApiError] = React.useState('');
   const [userInfo, setUserInfo] = React.useState({
     email: '',
     password: '',
@@ -50,6 +57,7 @@ function LoginScreen(): JSX.Element {
   };
 
   const handleError = (error: any, input: any) => {
+    setApiError('');
     setErrors(prevState => ({...prevState, [input]: error}));
   };
 
@@ -63,7 +71,6 @@ function LoginScreen(): JSX.Element {
 
   const loginUser = async () => {
     const {email, password} = userInfo;
-    const url = `http://localhost:3001/login`;
 
     axios
       .post(url, {email, password})
@@ -82,6 +89,51 @@ function LoginScreen(): JSX.Element {
         handleError(' ', 'email');
         handleError('Incorrect email or password', 'password');
       });
+  };
+
+  React.useEffect(() => {
+    GoogleSignin.configure({
+      scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+      webClientId:
+        '872044783302-9a5uuhc1o3r7oe04pnnfe3v8k4itgvv9.apps.googleusercontent.com',
+      iosClientId:
+        '872044783302-4ac4tsoq3rk70ek9t5vn8k1bqt3q1p1t.apps.googleusercontent.com',
+      offlineAccess: true,
+      forceCodeForRefreshToken: true,
+    });
+  }, []);
+
+  const signInWithGoogle = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userData = await GoogleSignin.signIn();
+
+      const {email, id} = userData.user;
+
+      axios
+        .post(url, {email, password: id})
+        .then(response => {
+          console.log(response);
+          setApiError('');
+          navigation.navigate('Home');
+        })
+        .catch(error => {
+          console.log(error);
+          setApiError(
+            'This account does not exist. Please create an account to sign in.',
+          );
+        });
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // user cancelled the login flow
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        // operation (e.g. sign in) is in progress already
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        // play services not available or outdated
+      } else {
+        // some other error happened
+      }
+    }
   };
 
   return (
@@ -160,6 +212,18 @@ function LoginScreen(): JSX.Element {
           </Text>
         </View>
 
+        {apiError && (
+          <Text
+            style={{
+              marginTop: 12,
+              marginBottom: -18,
+              color: Colors.red,
+              fontSize: 12,
+            }}>
+            {apiError}
+          </Text>
+        )}
+
         <TouchableOpacity
           onPress={validate}
           style={{
@@ -222,6 +286,7 @@ function LoginScreen(): JSX.Element {
               justifyContent: 'center',
             }}>
             <TouchableOpacity
+              onPress={() => signInWithGoogle()}
               style={{
                 padding: Spacing,
                 borderRadius: Spacing / 2,

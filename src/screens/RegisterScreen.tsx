@@ -13,6 +13,10 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Entypo';
 import axios from 'axios';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 
 //files
 
@@ -22,9 +26,19 @@ import Colors from '../components/constants/Colors';
 import Font from '../components/constants/Font';
 import AppTextInput from '../components/Auth/AppTextInput';
 
+type UserInfo = {
+  email: string;
+  password: string;
+  username: string;
+  confirmpassword: string;
+};
+
+const url = `http://localhost:3001/register`;
+
 function RegisterScreen(): JSX.Element {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const [userInfo, setUserInfo] = React.useState({
+  const [apiError, setApiError] = React.useState('');
+  const [userInfo, setUserInfo] = React.useState<UserInfo>({
     email: '',
     password: '',
     username: '',
@@ -99,13 +113,12 @@ function RegisterScreen(): JSX.Element {
   };
 
   const handleError = (error: any, input: any) => {
+    setApiError('');
     setErrors(prevState => ({...prevState, [input]: error}));
   };
 
   const registerUser = async () => {
     const {username, email, password} = userInfo;
-
-    const url = `http://localhost:3001/register`;
 
     axios
       .post(url, {username, email, password})
@@ -123,6 +136,49 @@ function RegisterScreen(): JSX.Element {
         console.log(error);
         handleError('This email is already present', 'email');
       });
+  };
+
+  React.useEffect(() => {
+    GoogleSignin.configure({
+      scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+      webClientId:
+        '872044783302-9a5uuhc1o3r7oe04pnnfe3v8k4itgvv9.apps.googleusercontent.com',
+      iosClientId:
+        '872044783302-4ac4tsoq3rk70ek9t5vn8k1bqt3q1p1t.apps.googleusercontent.com',
+      offlineAccess: true,
+      forceCodeForRefreshToken: true,
+    });
+  }, []);
+
+  const signUpWithGoogle = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userData = await GoogleSignin.signIn();
+
+      const {name, email, id, photo} = userData.user;
+
+      axios
+        .post(url, {username: name, email, password: id, image: photo})
+        .then(response => {
+          console.log(response);
+          setApiError('');
+          navigation.navigate('Home');
+        })
+        .catch(error => {
+          console.log(error);
+          setApiError('This email is already present');
+        });
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // user cancelled the login flow
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        // operation (e.g. sign in) is in progress already
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        // play services not available or outdated
+      } else {
+        // some other error happened
+      }
+    }
   };
 
   return (
@@ -217,6 +273,18 @@ function RegisterScreen(): JSX.Element {
           </View>
         </View>
 
+        {apiError && (
+          <Text
+            style={{
+              marginTop: -18,
+              marginBottom: 10,
+              color: Colors.red,
+              fontSize: 12,
+            }}>
+            {apiError}
+          </Text>
+        )}
+
         <TouchableOpacity
           onPress={validate}
           style={{
@@ -279,6 +347,7 @@ function RegisterScreen(): JSX.Element {
               justifyContent: 'center',
             }}>
             <TouchableOpacity
+              onPress={() => signUpWithGoogle()}
               style={{
                 padding: Spacing,
                 borderRadius: Spacing / 2,
