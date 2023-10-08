@@ -18,6 +18,7 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import {AccessToken, LoginManager, Profile} from 'react-native-fbsdk-next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 //files
 
@@ -125,6 +126,15 @@ function RegisterScreen(): JSX.Element {
       .post(url, {username, email, password})
       .then(response => {
         console.log(response);
+        AsyncStorage.setItem(
+          'User',
+          JSON.stringify({
+            id: response.data.id,
+            name: response.data.name,
+            email: userInfo.email,
+            image: response.data.image,
+          }),
+        );
         setUserInfo({
           username: '',
           email: '',
@@ -162,6 +172,15 @@ function RegisterScreen(): JSX.Element {
         .post(url, {username: name, email, password: id, image: photo})
         .then(response => {
           console.log(response);
+          AsyncStorage.setItem(
+            'User',
+            JSON.stringify({
+              id: userData.user.id,
+              name: userData.user.name,
+              email: userData.user.email,
+              image: userData.user.photo,
+            }),
+          );
           setApiError('');
           navigation.navigate('Home');
         })
@@ -397,6 +416,10 @@ function RegisterScreen(): JSX.Element {
                             })
                             .then(response => {
                               console.log(response);
+                              AsyncStorage.setItem(
+                                'User',
+                                JSON.stringify(currentProfile),
+                              );
                               setApiError('');
                               navigation.navigate('Home');
                             })

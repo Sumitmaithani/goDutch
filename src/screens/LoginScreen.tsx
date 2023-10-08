@@ -25,6 +25,7 @@ import FontSize from '../components/constants/FontSize';
 import Colors from '../components/constants/Colors';
 import Font from '../components/constants/Font';
 import AppTextInput from '../components/Auth/AppTextInput';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const url = `http://localhost:3001/login`;
 
@@ -76,7 +77,16 @@ function LoginScreen(): JSX.Element {
     axios
       .post(url, {email, password})
       .then(response => {
-        console.log(response);
+        console.log(response.data);
+        AsyncStorage.setItem(
+          'User',
+          JSON.stringify({
+            id: response.data.id,
+            name: response.data.name,
+            email: userInfo.email,
+            image: response.data.image,
+          }),
+        );
         setUserInfo({
           email: '',
           password: '',
@@ -115,6 +125,15 @@ function LoginScreen(): JSX.Element {
         .post(url, {email, password: id})
         .then(response => {
           console.log(response);
+          AsyncStorage.setItem(
+            'User',
+            JSON.stringify({
+              id: userData.user.id,
+              name: userData.user.name,
+              email: userData.user.email,
+              image: userData.user.photo,
+            }),
+          );
           setApiError('');
           navigation.navigate('Home');
         })
@@ -334,6 +353,15 @@ function LoginScreen(): JSX.Element {
                             })
                             .then(response => {
                               console.log(response);
+                              AsyncStorage.setItem(
+                                'User',
+                                JSON.stringify({
+                                  id: currentProfile.userID,
+                                  name: currentProfile.name,
+                                  email: currentProfile.email,
+                                  image: currentProfile.imageURL,
+                                }),
+                              );
                               setApiError('');
                               navigation.navigate('Home');
                             })
